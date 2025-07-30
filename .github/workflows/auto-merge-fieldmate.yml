@@ -18,22 +18,34 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Enable auto-merge or fallback merge
+      - name: Try auto-merge with GH CLI
         env:
           GH_TOKEN: ${{ secrets.GH_RELEASE_PAT }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          COMMIT_TITLE: "Auto-merge fieldmate release"
+          COMMIT_BODY: "Triggered by fieldmate release workflow"
         run: |
-          echo "Trying to enable auto-merge for PR #$PR_NUMBER"
-          # Try auto-merge first
-          gh pr merge "$PR_NUMBER" \
+          echo "ℹ️ Attempting auto-merge for PR #$PR_NUMBER"
+
+          if gh pr merge "$PR_NUMBER" \
             --squash \
             --auto \
             --delete-branch \
             --body "$COMMIT_BODY" \
-            --subject "$COMMIT_TITLE" || \
-          # Fallback: direct squash merge
-          gh pr merge "$PR_NUMBER" \
-            --squash \
-            --delete-branch \
-            --body "$COMMIT_BODY" \
-            --subject "$COMMIT_TITLE"
+            --subject "$COMMIT_TITLE"; then
+            echo "✅ Auto-merge enabled successfully"
+          else
+            echo "⚠️ Auto-merge failed, trying admin override..."
+
+            if gh pr merge "$PR_NUMBER" \
+              --squash \
+              --admin \
+              --delete-branch \
+              --body "$COMMIT_BODY" \
+              --subject "$COMMIT_TITLE"; then
+              echo "✅ Admin merge successful"
+            else
+              echo "❌ Merge failed completely — manual action required"
+              exit 1
+            fi
+          fi

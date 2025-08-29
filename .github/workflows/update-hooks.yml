@@ -52,7 +52,6 @@ jobs:
           body: |
             This PR updates pre-commit hooks to their latest versions.
             _Generated automatically by GitHub Actions._
-          labels: dependencies,development
           delete-branch: true
           draft: false
           token: ${{ secrets.GITHUB_TOKEN }}
